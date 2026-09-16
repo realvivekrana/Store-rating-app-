@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import PasswordField from '../components/PasswordField';
 import { validateName, validateAddress, validateEmail, validatePassword } from '../utils/validators';
 
 export default function Signup() {
@@ -9,6 +11,7 @@ export default function Signup() {
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
+  const toast = useToast();
   const navigate = useNavigate();
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -31,6 +34,7 @@ export default function Signup() {
     setLoading(true);
     try {
       await signup(form);
+      toast.success('Account created — welcome aboard!');
       navigate('/stores');
     } catch (err) {
       setServerError(err.response?.data?.message || 'Signup failed');
@@ -45,23 +49,23 @@ export default function Signup() {
         <h2>Create your account</h2>
         {serverError && <div className="error-banner">{serverError}</div>}
 
-        <label>Full Name</label>
-        <input name="name" value={form.name} onChange={handleChange} placeholder="3-60 characters" />
+        <label htmlFor="signup-name">Full Name</label>
+        <input id="signup-name" name="name" value={form.name} onChange={handleChange} placeholder="3-60 characters" autoComplete="name" />
         {errors.name && <span className="field-error">{errors.name}</span>}
 
-        <label>Email</label>
-        <input name="email" type="email" value={form.email} onChange={handleChange} />
+        <label htmlFor="signup-email">Email</label>
+        <input id="signup-email" name="email" type="email" value={form.email} onChange={handleChange} autoComplete="email" />
         {errors.email && <span className="field-error">{errors.email}</span>}
 
-        <label>Address</label>
-        <textarea name="address" value={form.address} onChange={handleChange} maxLength={400} />
+        <label htmlFor="signup-address">Address</label>
+        <textarea id="signup-address" name="address" value={form.address} onChange={handleChange} maxLength={400} />
         {errors.address && <span className="field-error">{errors.address}</span>}
 
-        <label>Password</label>
-        <input name="password" type="password" value={form.password} onChange={handleChange} placeholder="8-16 chars, 1 uppercase, 1 special char" />
+        <label htmlFor="signup-password">Password</label>
+        <PasswordField id="signup-password" name="password" value={form.password} onChange={handleChange} placeholder="8-16 chars, 1 uppercase, 1 special char" autoComplete="new-password" />
         {errors.password && <span className="field-error">{errors.password}</span>}
 
-        <button type="submit" disabled={loading}>{loading ? 'Creating account...' : 'Sign up'}</button>
+        <button type="submit" disabled={loading}>{loading ? 'Creating account…' : 'Sign up'}</button>
         <p className="auth-switch">
           Already have an account? <Link to="/login">Log in</Link>
         </p>

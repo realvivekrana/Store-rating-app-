@@ -1,7 +1,13 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import SortableHeader from '../components/SortableHeader';
+import Pagination from '../components/Pagination';
+import EmptyState from '../components/EmptyState';
+import { SkeletonRows } from '../components/Skeleton';
+import useDebounce from '../hooks/useDebounce';
+
+const PAGE_SIZE = 10;
 
 export default function AdminStores() {
   const [stores, setStores] = useState([]);
@@ -9,20 +15,25 @@ export default function AdminStores() {
   const [sortBy, setSortBy] = useState('name');
   const [order, setOrder] = useState('asc');
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  const debouncedFilters = useDebounce(filters);
 
   const fetchStores = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/admin/stores', { params: { ...filters, sortBy, order } });
+      const res = await api.get('/admin/stores', { params: { ...debouncedFilters, sortBy, order } });
       setStores(res.data.stores);
     } finally {
       setLoading(false);
     }
-  }, [filters, sortBy, order]);
+  }, [debouncedFilters, sortBy, order]);
 
   useEffect(() => {
     fetchStores();
   }, [fetchStores]);
+
+  useEffect(() => { setPage(1); }, [debouncedFilters, sortBy, order]);
 
   const handleSort = (field) => {
     if (sortBy === field) setOrder(order === 'asc' ? 'desc' : 'asc');
@@ -31,6 +42,12 @@ export default function AdminStores() {
       setOrder('asc');
     }
   };
+
+  const totalPages = Math.max(1, Math.ceil(stores.length / PAGE_SIZE));
+  const pageStores = useMemo(
+    () => stores.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [stores, page]
+  );
 
   return (
     <div className="page">
@@ -45,29 +62,38 @@ export default function AdminStores() {
         <input placeholder="Filter by address" value={filters.address} onChange={(e) => setFilters({ ...filters, address: e.target.value })} />
       </div>
 
-      {loading ? (
-        <p>Loading...</p>
+      {!loading && stores.length === 0 ? (
+        <EmptyState icon="⌕" title="No stores found" hint="Try adjusting your filters, or add a new store." />
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <SortableHeader label="Name" field="name" sortBy={sortBy} order={order} onSort={handleSort} />
-              <SortableHeader label="Email" field="email" sortBy={sortBy} order={order} onSort={handleSort} />
-              <SortableHeader label="Address" field="address" sortBy={sortBy} order={order} onSort={handleSort} />
-              <th>Rating</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stores.map((s) => (
-              <tr key={s.id}>
-                <td>{s.name}</td>
-                <td>{s.email}</td>
-                <td>{s.address}</td>
-                <td>{s.rating ? `${s.rating} / 5 (${s.ratingCount})` : 'No ratings yet'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <SortableHeader label="Name" field="name" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <SortableHeader label="Email" field="email" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <SortableHeader label="Address" field="address" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <th>Rating</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <SkeletonRows columns={4} rows={6} />
+                ) : (
+                  pageStores.map((s) => (
+                    <tr key={s.id}>
+                      <td data-label="Name">{s.name}</td>
+                      <td data-label="Email">{s.email}</td>
+                      <td data-label="Address">{s.address}</td>
+                      <td data-label="Rating" className="rating-figure">{s.rating ? `${s.rating} / 5 (${s.ratingCount})` : 'No ratings yet'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {!loading && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
+        </>
       )}
     </div>
   );

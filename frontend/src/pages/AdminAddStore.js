@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { useToast } from '../context/ToastContext';
 import { validateName, validateAddress, validateEmail } from '../utils/validators';
 
 export default function AdminAddStore() {
@@ -8,7 +9,9 @@ export default function AdminAddStore() {
   const [owners, setOwners] = useState([]);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     api.get('/admin/users', { params: { role: 'owner' } }).then((res) => setOwners(res.data.users));
@@ -30,11 +33,15 @@ export default function AdminAddStore() {
     e.preventDefault();
     setServerError('');
     if (!validate()) return;
+    setLoading(true);
     try {
       await api.post('/admin/stores', { ...form, ownerId: form.ownerId || undefined });
+      toast.success('Store created');
       navigate('/admin/stores');
     } catch (err) {
       setServerError(err.response?.data?.message || 'Failed to create store');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,20 +51,20 @@ export default function AdminAddStore() {
       <form className="form-card" onSubmit={handleSubmit}>
         {serverError && <div className="error-banner">{serverError}</div>}
 
-        <label>Store Name</label>
-        <input name="name" value={form.name} onChange={handleChange} maxLength={60} />
+        <label htmlFor="add-store-name">Store Name</label>
+        <input id="add-store-name" name="name" value={form.name} onChange={handleChange} maxLength={60} />
         {errors.name && <span className="field-error">{errors.name}</span>}
 
-        <label>Store Email</label>
-        <input name="email" type="email" value={form.email} onChange={handleChange} />
+        <label htmlFor="add-store-email">Store Email</label>
+        <input id="add-store-email" name="email" type="email" value={form.email} onChange={handleChange} />
         {errors.email && <span className="field-error">{errors.email}</span>}
 
-        <label>Address</label>
-        <textarea name="address" value={form.address} onChange={handleChange} maxLength={400} />
+        <label htmlFor="add-store-address">Address</label>
+        <textarea id="add-store-address" name="address" value={form.address} onChange={handleChange} maxLength={400} />
         {errors.address && <span className="field-error">{errors.address}</span>}
 
-        <label>Store Owner (optional)</label>
-        <select name="ownerId" value={form.ownerId} onChange={handleChange}>
+        <label htmlFor="add-store-owner">Store Owner (optional)</label>
+        <select id="add-store-owner" name="ownerId" value={form.ownerId} onChange={handleChange}>
           <option value="">-- No owner account linked --</option>
           {owners.map((o) => (
             <option key={o.id} value={o.id}>{o.name} ({o.email})</option>
@@ -67,7 +74,7 @@ export default function AdminAddStore() {
           Only users with the "Store Owner" role appear here. Create one first via Add User if needed.
         </p>
 
-        <button type="submit">Create Store</button>
+        <button type="submit" disabled={loading}>{loading ? 'Creating…' : 'Create Store'}</button>
       </form>
     </div>
   );

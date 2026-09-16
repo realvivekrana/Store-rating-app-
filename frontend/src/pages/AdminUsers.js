@@ -1,7 +1,13 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import SortableHeader from '../components/SortableHeader';
+import Pagination from '../components/Pagination';
+import EmptyState from '../components/EmptyState';
+import { SkeletonRows } from '../components/Skeleton';
+import useDebounce from '../hooks/useDebounce';
+
+const PAGE_SIZE = 10;
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -9,20 +15,25 @@ export default function AdminUsers() {
   const [sortBy, setSortBy] = useState('name');
   const [order, setOrder] = useState('asc');
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  const debouncedFilters = useDebounce(filters);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/admin/users', { params: { ...filters, sortBy, order } });
+      const res = await api.get('/admin/users', { params: { ...debouncedFilters, sortBy, order } });
       setUsers(res.data.users);
     } finally {
       setLoading(false);
     }
-  }, [filters, sortBy, order]);
+  }, [debouncedFilters, sortBy, order]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  useEffect(() => { setPage(1); }, [debouncedFilters, sortBy, order]);
 
   const handleSort = (field) => {
     if (sortBy === field) setOrder(order === 'asc' ? 'desc' : 'asc');
@@ -31,6 +42,12 @@ export default function AdminUsers() {
       setOrder('asc');
     }
   };
+
+  const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
+  const pageUsers = useMemo(
+    () => users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [users, page]
+  );
 
   return (
     <div className="page">
@@ -51,31 +68,40 @@ export default function AdminUsers() {
         </select>
       </div>
 
-      {loading ? (
-        <p>Loading...</p>
+      {!loading && users.length === 0 ? (
+        <EmptyState icon="⌕" title="No users found" hint="Try adjusting your filters." />
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <SortableHeader label="Name" field="name" sortBy={sortBy} order={order} onSort={handleSort} />
-              <SortableHeader label="Email" field="email" sortBy={sortBy} order={order} onSort={handleSort} />
-              <SortableHeader label="Address" field="address" sortBy={sortBy} order={order} onSort={handleSort} />
-              <SortableHeader label="Role" field="role" sortBy={sortBy} order={order} onSort={handleSort} />
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td>{u.name}</td>
-                <td>{u.email}</td>
-                <td>{u.address}</td>
-                <td><span className={`role-badge role-${u.role}`}>{u.role}</span></td>
-                <td><Link to={`/admin/users/${u.id}`}>View</Link></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <SortableHeader label="Name" field="name" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <SortableHeader label="Email" field="email" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <SortableHeader label="Address" field="address" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <SortableHeader label="Role" field="role" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <SkeletonRows columns={5} rows={6} />
+                ) : (
+                  pageUsers.map((u) => (
+                    <tr key={u.id}>
+                      <td data-label="Name">{u.name}</td>
+                      <td data-label="Email">{u.email}</td>
+                      <td data-label="Address">{u.address}</td>
+                      <td data-label="Role"><span className={`role-badge role-${u.role}`}>{u.role}</span></td>
+                      <td data-label=""><Link to={`/admin/users/${u.id}`}>View</Link></td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {!loading && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
+        </>
       )}
     </div>
   );

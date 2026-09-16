@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { ToastProvider } from './context/ToastContext';
 import PrivateRoute from './components/PrivateRoute';
 import Navbar from './components/Navbar';
 
@@ -24,7 +26,7 @@ import './App.css';
 
 function Home() {
   const { user, loading } = useAuth();
-  if (loading) return <div className="page-loading">Loading...</div>;
+  if (loading) return <div className="page-loading">Loading…</div>;
   // Logged-in users skip the landing page and go straight to their dashboard.
   if (user) {
     if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
@@ -35,32 +37,49 @@ function Home() {
   return <Landing />;
 }
 
+function NotFound() {
+  return (
+    <div className="page not-found">
+      <div className="not-found-mark">404</div>
+      <h2>Page not found</h2>
+      <p className="muted">The page you're looking for doesn't exist or has moved.</p>
+      <a className="btn" href="/">Go home</a>
+    </div>
+  );
+}
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <ToastProvider>
+            <Navbar />
+            <main className="app-main">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
 
-          <Route path="/update-password" element={<PrivateRoute><UpdatePassword /></PrivateRoute>} />
+                <Route path="/update-password" element={<PrivateRoute><UpdatePassword /></PrivateRoute>} />
 
-          <Route path="/stores" element={<PrivateRoute roles={['user']}><UserStores /></PrivateRoute>} />
+                <Route path="/stores" element={<PrivateRoute roles={['user']}><UserStores /></PrivateRoute>} />
 
-          <Route path="/admin/dashboard" element={<PrivateRoute roles={['admin']}><AdminDashboard /></PrivateRoute>} />
-          <Route path="/admin/users" element={<PrivateRoute roles={['admin']}><AdminUsers /></PrivateRoute>} />
-          <Route path="/admin/users/new" element={<PrivateRoute roles={['admin']}><AdminAddUser /></PrivateRoute>} />
-          <Route path="/admin/users/:id" element={<PrivateRoute roles={['admin']}><AdminUserDetail /></PrivateRoute>} />
-          <Route path="/admin/stores" element={<PrivateRoute roles={['admin']}><AdminStores /></PrivateRoute>} />
-          <Route path="/admin/stores/new" element={<PrivateRoute roles={['admin']}><AdminAddStore /></PrivateRoute>} />
+                <Route path="/admin/dashboard" element={<PrivateRoute roles={['admin']}><AdminDashboard /></PrivateRoute>} />
+                <Route path="/admin/users" element={<PrivateRoute roles={['admin']}><AdminUsers /></PrivateRoute>} />
+                <Route path="/admin/users/new" element={<PrivateRoute roles={['admin']}><AdminAddUser /></PrivateRoute>} />
+                <Route path="/admin/users/:id" element={<PrivateRoute roles={['admin']}><AdminUserDetail /></PrivateRoute>} />
+                <Route path="/admin/stores" element={<PrivateRoute roles={['admin']}><AdminStores /></PrivateRoute>} />
+                <Route path="/admin/stores/new" element={<PrivateRoute roles={['admin']}><AdminAddStore /></PrivateRoute>} />
 
-          <Route path="/owner/dashboard" element={<PrivateRoute roles={['owner']}><OwnerDashboard /></PrivateRoute>} />
+                <Route path="/owner/dashboard" element={<PrivateRoute roles={['owner']}><OwnerDashboard /></PrivateRoute>} />
 
-          <Route path="*" element={<div className="page">Page not found</div>} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+          </ToastProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
