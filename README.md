@@ -41,7 +41,7 @@ store-rating-app/
 ```
 
 ## Database Schema (MongoDB / Mongoose)
-- **User**: `name` (20-60 chars), `email` (unique), `password` (hashed, bcrypt),
+- **User**: `name` (3-60 chars), `email` (unique), `password` (hashed, bcrypt),
   `address` (max 400), `role` (`admin` | `user` | `owner`)
 - **Store**: `name`, `email` (unique), `address`, `owner` (ref User, optional — links a
   Store Owner account to the store they manage)
@@ -86,7 +86,7 @@ npm install
 # Create .env the same way as above (copy / Copy-Item / cp), containing:
 #   REACT_APP_API_URL=http://localhost:5000/api
 
-npm start                  # starts on http://localhost:3000
+npm run dev                # starts on http://localhost:3000
 ```
 
 ### 3. First login
@@ -104,7 +104,7 @@ Use the admin credentials from `backend/.env` (defaults: `admin@storerating.com`
 | **Store Owner** | Log in, view average rating + list of users who rated their store, change password |
 
 ## Validation Rules (enforced both frontend & backend)
-- Name: 20-60 characters
+- Name: 3-60 characters
 - Address: max 400 characters
 - Password: 8-16 characters, at least 1 uppercase letter + 1 special character
 - Email: standard email format

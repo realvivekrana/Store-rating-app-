@@ -1,6 +1,6 @@
 export function validateName(name) {
-  if (!name || name.trim().length < 20 || name.trim().length > 60) {
-    return 'Name must be between 20 and 60 characters';
+  if (!name || name.trim().length < 3 || name.trim().length > 60) {
+    return 'Name must be between 3 and 60 characters';
   }
   return '';
 }

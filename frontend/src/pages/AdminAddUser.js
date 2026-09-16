@@ -41,7 +41,7 @@ export default function AdminAddUser() {
         {serverError && <div className="error-banner">{serverError}</div>}
 
         <label>Full Name</label>
-        <input name="name" value={form.name} onChange={handleChange} placeholder="20-60 characters" />
+        <input name="name" value={form.name} onChange={handleChange} placeholder="3-60 characters" />
         {errors.name && <span className="field-error">{errors.name}</span>}
 
         <label>Email</label>

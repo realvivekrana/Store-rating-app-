@@ -1,6 +1,6 @@
 // Centralized validation helpers, used by both signup and admin "add user" flows.
 
-const NAME_MIN = 20;
+const NAME_MIN = 3;
 const NAME_MAX = 60;
 const ADDRESS_MAX = 400;
 
