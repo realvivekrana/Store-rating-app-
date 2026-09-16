@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Navbar from './components/Navbar';
 
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import UpdatePassword from './pages/UpdatePassword';
@@ -22,11 +23,16 @@ import OwnerDashboard from './pages/OwnerDashboard';
 import './App.css';
 
 function Home() {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
-  if (user.role === 'owner') return <Navigate to="/owner/dashboard" replace />;
-  return <Navigate to="/stores" replace />;
+  const { user, loading } = useAuth();
+  if (loading) return <div className="page-loading">Loading...</div>;
+  // Logged-in users skip the landing page and go straight to their dashboard.
+  if (user) {
+    if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+    if (user.role === 'owner') return <Navigate to="/owner/dashboard" replace />;
+    return <Navigate to="/stores" replace />;
+  }
+  // Not logged in: show the public landing page instead of forcing login.
+  return <Landing />;
 }
 
 export default function App() {

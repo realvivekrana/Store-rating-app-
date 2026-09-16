@@ -29,8 +29,8 @@ export default function Navbar() {
           <button className="link-btn" onClick={handleLogout}>Logout ({user.name.split(' ')[0]})</button>
         ) : (
           <>
-            <Link to="/login">Login</Link>
             <Link to="/signup">Sign up</Link>
+            <Link to="/login" className="nav-login-btn">Log in</Link>
           </>
         )}
       </div>
