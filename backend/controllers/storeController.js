@@ -1,69 +1,211 @@
+const mongoose = require('mongoose');
+
 const Store = require('../models/Store');
 const Rating = require('../models/Rating');
-const { validateRating } = require('../utils/validators');
 
-// GET /api/stores?name=&address=&sortBy=&order=   (Normal User store listing)
+const {
+  validateRating,
+  escapeRegex,
+} = require('../utils/validators');
+
+// GET /api/stores
 exports.listStoresForUser = async (req, res) => {
   try {
-    const { name, address, sortBy = 'name', order = 'asc' } = req.query;
+    const {
+      name,
+      address,
+      sortBy = 'name',
+      order = 'asc',
+    } = req.query;
+
     const filter = {};
-    if (name) filter.name = { $regex: name, $options: 'i' };
-    if (address) filter.address = { $regex: address, $options: 'i' };
 
-    const allowedSort = ['name', 'address', 'createdAt'];
-    const sortField = allowedSort.includes(sortBy) ? sortBy : 'name';
-    const sortDir = order === 'desc' ? -1 : 1;
+    if (name && name.trim()) {
+      filter.name = {
+        $regex: escapeRegex(name.trim()),
+        $options: 'i',
+      };
+    }
 
-    const stores = await Store.find(filter).sort({ [sortField]: sortDir });
+    if (address && address.trim()) {
+      filter.address = {
+        $regex: escapeRegex(address.trim()),
+        $options: 'i',
+      };
+    }
 
-    const storeIds = stores.map((s) => s._id);
-    const agg = await Rating.aggregate([
-      { $match: { store: { $in: storeIds } } },
-      { $group: { _id: '$store', avg: { $avg: '$rating' } } },
-    ]);
-    const avgMap = {};
-    agg.forEach((a) => {
-      avgMap[a._id.toString()] = Math.round(a.avg * 10) / 10;
+    const allowedSortFields = [
+      'name',
+      'address',
+      'createdAt',
+    ];
+
+    const sortField =
+      allowedSortFields.includes(sortBy)
+        ? sortBy
+        : 'name';
+
+    const sortDirection =
+      order === 'desc' ? -1 : 1;
+
+    const stores = await Store.find(filter).sort({
+      [sortField]: sortDirection,
     });
 
-    const myRatings = await Rating.find({ user: req.user._id, store: { $in: storeIds } });
+    if (stores.length === 0) {
+      return res.json({
+        stores: [],
+      });
+    }
+
+    const storeIds = stores.map(
+      (store) => store._id
+    );
+
+    // Overall ratings
+    const ratingAggregation =
+      await Rating.aggregate([
+        {
+          $match: {
+            store: {
+              $in: storeIds,
+            },
+          },
+        },
+        {
+          $group: {
+            _id: '$store',
+            average: {
+              $avg: '$rating',
+            },
+          },
+        },
+      ]);
+
+    const averageRatingMap = {};
+
+    ratingAggregation.forEach((item) => {
+      averageRatingMap[
+        item._id.toString()
+      ] =
+        Math.round(item.average * 10) / 10;
+    });
+
+    // Current user's ratings
+    const myRatings = await Rating.find({
+      user: req.user._id,
+      store: {
+        $in: storeIds,
+      },
+    });
+
     const myRatingMap = {};
-    myRatings.forEach((r) => {
-      myRatingMap[r.store.toString()] = r.rating;
+
+    myRatings.forEach((rating) => {
+      myRatingMap[
+        rating.store.toString()
+      ] = rating.rating;
     });
 
-    const result = stores.map((s) => ({
-      id: s._id,
-      name: s.name,
-      address: s.address,
-      overallRating: avgMap[s._id.toString()] || null,
-      userRating: myRatingMap[s._id.toString()] || null,
-    }));
+    const result = stores.map((store) => {
+      const storeId =
+        store._id.toString();
 
-    res.json({ stores: result });
+      return {
+        id: store._id,
+        name: store.name,
+        address: store.address,
+
+        overallRating:
+          averageRatingMap[storeId] ??
+          null,
+
+        userRating:
+          myRatingMap[storeId] ??
+          null,
+      };
+    });
+
+    return res.json({
+      stores: result,
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to list stores', error: err.message });
+    console.error(
+      'List stores error:',
+      err
+    );
+
+    return res.status(500).json({
+      message: 'Failed to list stores',
+      error: err.message,
+    });
   }
 };
 
-// POST /api/stores/:id/rating   (create or update — upsert — a rating)
+// POST /api/stores/:id/rating
 exports.submitRating = async (req, res) => {
   try {
     const { rating } = req.body;
-    const err = validateRating(rating);
-    if (err) return res.status(400).json({ message: err });
 
-    const store = await Store.findById(req.params.id);
-    if (!store) return res.status(404).json({ message: 'Store not found' });
+    const validationError =
+      validateRating(rating);
 
-    const saved = await Rating.findOneAndUpdate(
-      { user: req.user._id, store: store._id },
-      { rating: Number(rating) },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
+    if (validationError) {
+      return res.status(400).json({
+        message: validationError,
+      });
+    }
+
+    if (
+      !mongoose.Types.ObjectId.isValid(
+        req.params.id
+      )
+    ) {
+      return res.status(400).json({
+        message: 'Invalid store id',
+      });
+    }
+
+    const store = await Store.findById(
+      req.params.id
     );
 
-    res.json({ rating: saved.rating, message: 'Rating saved successfully' });
+    if (!store) {
+      return res.status(404).json({
+        message: 'Store not found',
+      });
+    }
+
+    const savedRating =
+      await Rating.findOneAndUpdate(
+        {
+          user: req.user._id,
+          store: store._id,
+        },
+        {
+          rating: Number(rating),
+        },
+        {
+          new: true,
+          upsert: true,
+          setDefaultsOnInsert: true,
+        }
+      );
+
+    return res.json({
+      rating: savedRating.rating,
+      message:
+        'Rating saved successfully',
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to submit rating', error: err.message });
+    console.error(
+      'Submit rating error:',
+      err
+    );
+
+    return res.status(500).json({
+      message: 'Failed to submit rating',
+      error: err.message,
+    });
   }
 };

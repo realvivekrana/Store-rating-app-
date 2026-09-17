@@ -6,6 +6,7 @@ import Pagination from '../components/Pagination';
 import EmptyState from '../components/EmptyState';
 import { SkeletonRows } from '../components/Skeleton';
 import useDebounce from '../hooks/useDebounce';
+import { useToast } from '../context/ToastContext';
 
 const PAGE_SIZE = 10;
 
@@ -16,6 +17,7 @@ export default function AdminStores() {
   const [order, setOrder] = useState('asc');
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const toast = useToast();
 
   const debouncedFilters = useDebounce(filters);
 
@@ -24,10 +26,12 @@ export default function AdminStores() {
     try {
       const res = await api.get('/admin/stores', { params: { ...debouncedFilters, sortBy, order } });
       setStores(res.data.stores);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not load stores.');
     } finally {
       setLoading(false);
     }
-  }, [debouncedFilters, sortBy, order]);
+  }, [debouncedFilters, sortBy, order, toast]);
 
   useEffect(() => {
     fetchStores();

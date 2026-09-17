@@ -1,20 +1,53 @@
-import React, { useState } from 'react';
+import React, {
+  useState,
+} from 'react';
 
-// A password <input> with a show/hide toggle. Spreads any extra props
-// (name, value, onChange, placeholder, required...) straight onto the input.
-export default function PasswordField({ id, ...inputProps }) {
-  const [visible, setVisible] = useState(false);
+export default function PasswordField({
+  id,
+  name,
+  value,
+  onChange,
+  placeholder = 'Password',
+  autoComplete,
+  disabled = false,
+}) {
+  const [show, setShow] =
+    useState(false);
+
   return (
     <div className="password-field">
-      <input id={id} type={visible ? 'text' : 'password'} {...inputProps} />
+      <input
+        id={id}
+        name={name}
+        type={
+          show
+            ? 'text'
+            : 'password'
+        }
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        autoComplete={
+          autoComplete
+        }
+        disabled={disabled}
+      />
+
       <button
         type="button"
         className="password-toggle"
-        onClick={() => setVisible((v) => !v)}
-        aria-label={visible ? 'Hide password' : 'Show password'}
-        tabIndex={-1}
+        onClick={() =>
+          setShow(
+            (current) => !current
+          )
+        }
+        aria-label={
+          show
+            ? 'Hide password'
+            : 'Show password'
+        }
       >
-        {visible ? '🙈' : '👁'}
+        {show ? 'Hide' : 'Show'}
       </button>
     </div>
   );

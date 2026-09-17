@@ -4,36 +4,51 @@ const storeSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
+      required: [true, 'Store name is required'],
       trim: true,
-      maxlength: 60,
+      minlength: 2,
+      maxlength: 100,
     },
+
     email: {
       type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
+      required: [true, 'Store email is required'],
       trim: true,
+      lowercase: true,
+      unique: true,
     },
+
     address: {
       type: String,
-      required: true,
+      required: [true, 'Store address is required'],
+      trim: true,
       maxlength: 400,
     },
-    // A store can optionally be linked to a Store Owner user account.
-    // The owner logs in with this user's credentials to see their dashboard.
+
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-// Note: no separate index() call for email — `unique: true` on the field above
-// already creates that index.
-storeSchema.index({ name: 1 });
-storeSchema.index({ address: 1 });
+storeSchema.index({
+  name: 1,
+});
 
-module.exports = mongoose.model('Store', storeSchema);
+storeSchema.index({
+  address: 1,
+});
+
+storeSchema.index({
+  owner: 1,
+});
+
+module.exports = mongoose.model(
+  'Store',
+  storeSchema
+);

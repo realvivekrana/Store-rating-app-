@@ -28,10 +28,12 @@ export default function UserStores() {
     try {
       const res = await api.get('/stores', { params: { name: debouncedName, address: debouncedAddress, sortBy, order } });
       setStores(res.data.stores);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not load stores. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [debouncedName, debouncedAddress, sortBy, order]);
+  }, [debouncedName, debouncedAddress, sortBy, order, toast]);
 
   useEffect(() => {
     fetchStores();

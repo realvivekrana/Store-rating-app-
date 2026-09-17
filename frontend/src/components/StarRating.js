@@ -1,32 +1,74 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-// Interactive 1-5 star picker. Pass `value` and `onChange` for interactive use,
-// or just `value` with no `onChange` for a read-only display.
-export default function StarRating({ value = 0, onChange, size = 22 }) {
-  const [hover, setHover] = useState(0);
-  const stars = [1, 2, 3, 4, 5];
-  const shown = onChange && hover ? hover : value;
+export default function StarRating({
+  value = 0,
+  onChange,
+  size = 22,
+}) {
+  const currentValue =
+    Number(value) || 0;
 
   return (
-    <span
-      className={`star-rating ${onChange ? 'interactive' : ''}`}
-      style={{ fontSize: size }}
-      onMouseLeave={onChange ? () => setHover(0) : undefined}
+    <div
+      className="star-rating"
+      role={
+        onChange
+          ? 'radiogroup'
+          : undefined
+      }
+      aria-label={
+        onChange
+          ? 'Select rating'
+          : `Rating: ${currentValue} out of 5`
+      }
+      style={{
+        fontSize: `${size}px`,
+      }}
     >
-      {stars.map((s) => (
-        <span
-          key={s}
-          className={s <= shown ? 'star filled' : 'star'}
-          onClick={onChange ? () => onChange(s) : undefined}
-          onMouseEnter={onChange ? () => setHover(s) : undefined}
-          role={onChange ? 'button' : undefined}
-          tabIndex={onChange ? 0 : undefined}
-          onKeyDown={onChange ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(s); } } : undefined}
-          aria-label={`${s} star${s > 1 ? 's' : ''}`}
-        >
-          ★
-        </span>
-      ))}
-    </span>
+      {[1, 2, 3, 4, 5].map(
+        (star) => {
+          const active =
+            star <= currentValue;
+
+          if (!onChange) {
+            return (
+              <span
+                key={star}
+                className={
+                  active
+                    ? 'star active'
+                    : 'star'
+                }
+                aria-hidden="true"
+              >
+                ★
+              </span>
+            );
+          }
+
+          return (
+            <button
+              type="button"
+              key={star}
+              className={
+                active
+                  ? 'star-button active'
+                  : 'star-button'
+              }
+              onClick={() =>
+                onChange(star)
+              }
+              role="radio"
+              aria-checked={
+                currentValue === star
+              }
+              aria-label={`${star} star`}
+            >
+              ★
+            </button>
+          );
+        }
+      )}
+    </div>
   );
 }

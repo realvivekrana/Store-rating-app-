@@ -1,53 +1,109 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import StarRating from '../components/StarRating';
+import {
+  Link,
+} from 'react-router-dom';
 
-// Public landing page — shown at "/" to anyone who is not logged in.
-// No auth required to view this. Login/Signup are just prominent buttons here.
+import { useAuth } from '../context/AuthContext';
+
 export default function Landing() {
-  return (
-    <div className="landing">
-      <section className="landing-hero">
-        <div className="landing-copy">
-          <h1>Know which stores actually earn their stars.</h1>
-          <p>
-            Rate any store from 1 to 5, see what other people think before you go, and
-            keep a running record store owners and admins can trust.
-          </p>
-          <div className="landing-cta">
-            <Link to="/signup" className="btn">Create an account</Link>
-            <Link to="/login" className="btn-outline">Log in</Link>
-          </div>
-        </div>
+  const { user } = useAuth();
 
-        <div className="hero-preview" aria-hidden="true">
-          <div className="hero-preview-card">
-            <span className="hero-preview-tag">SAMPLE LISTING</span>
-            <h3>Riverside Hardware</h3>
-            <p className="muted">4 Canal Street</p>
-            <div className="store-rating-row">
-              <span className="hero-preview-avg">4.6</span>
-              <StarRating value={5} />
-            </div>
-            <p className="muted" style={{ marginTop: 4 }}>128 ratings</p>
+  const dashboardPath =
+    user?.role === 'admin'
+      ? '/admin'
+      : user?.role === 'owner'
+        ? '/owner'
+        : '/stores';
+
+  return (
+    <div className="landing-page">
+      <section className="hero">
+        <div className="hero-content">
+          <span className="eyebrow">
+            STORE RATING PLATFORM
+          </span>
+
+          <h1>
+            Discover stores.
+            <br />
+            Share your experience.
+          </h1>
+
+          <p>
+            Find stores, check ratings and
+            share your own experience with a
+            simple and reliable rating platform.
+          </p>
+
+          <div className="hero-actions">
+            {user ? (
+              <Link
+                to={dashboardPath}
+                className="btn-primary"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/signup"
+                  className="btn-primary"
+                >
+                  Get Started
+                </Link>
+
+                <Link
+                  to="/login"
+                  className="btn-secondary"
+                >
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
 
-      <hr className="section-divider" />
+      <section className="feature-section">
+        <div className="feature-card">
+          <div className="feature-icon">
+            ★
+          </div>
 
-      <section className="landing-features">
-        <div className="feature-card for-user">
-          <h3>Normal users</h3>
-          <p>Sign up, browse registered stores, search by name or address, and submit or update your 1-5 star rating anytime.</p>
+          <h3>Rate Stores</h3>
+
+          <p>
+            Give stores a rating from one to
+            five stars based on your experience.
+          </p>
         </div>
-        <div className="feature-card for-owner">
-          <h3>Store owners</h3>
-          <p>See your store's average rating at a glance and view exactly who rated you and when.</p>
+
+        <div className="feature-card">
+          <div className="feature-icon">
+            ⌕
+          </div>
+
+          <h3>Find Stores</h3>
+
+          <p>
+            Search stores by name or address
+            and quickly find the information
+            you need.
+          </p>
         </div>
-        <div className="feature-card for-admin">
-          <h3>Administrators</h3>
-          <p>Add users and stores, monitor platform-wide stats, and manage everything from one dashboard.</p>
+
+        <div className="feature-card">
+          <div className="feature-icon">
+            ◈
+          </div>
+
+          <h3>Manage Everything</h3>
+
+          <p>
+            Dedicated dashboards provide
+            useful tools for users, owners and
+            administrators.
+          </p>
         </div>
       </section>
     </div>

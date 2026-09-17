@@ -1,25 +1,64 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
-// Small centered confirmation dialog. Controlled entirely by the parent via
-// `open`; renders nothing when closed.
-export default function ConfirmModal({ open, title, message, confirmLabel = 'Confirm', onConfirm, onCancel }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open, onCancel]);
-
-  if (!open) return null;
+export default function ConfirmModal({
+  open,
+  title = 'Confirm action',
+  message = 'Are you sure?',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  onConfirm,
+  onCancel,
+  loading = false,
+}) {
+  if (!open) {
+    return null;
+  }
 
   return (
-    <div className="modal-backdrop" onClick={onCancel}>
-      <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" onClick={(e) => e.stopPropagation()}>
-        <h3 id="confirm-modal-title">{title}</h3>
-        <p className="muted">{message}</p>
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (
+          event.target ===
+          event.currentTarget
+        ) {
+          onCancel();
+        }
+      }}
+    >
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+      >
+        <h3 id="confirm-title">
+          {title}
+        </h3>
+
+        <p>{message}</p>
+
         <div className="modal-actions">
-          <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
-          <button type="button" className="btn-danger" onClick={onConfirm}>{confirmLabel}</button>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={onCancel}
+            disabled={loading}
+          >
+            {cancelText}
+          </button>
+
+          <button
+            type="button"
+            className="btn-danger"
+            onClick={onConfirm}
+            disabled={loading}
+          >
+            {loading
+              ? 'Please wait...'
+              : confirmText}
+          </button>
         </div>
       </div>
     </div>

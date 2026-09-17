@@ -1,31 +1,72 @@
-// One-time fix: promotes the existing user with ADMIN_EMAIL to role "admin".
-// This handles the case where that email was already used to sign up as a
-// normal user (role defaults to 'user') BEFORE seed:admin ever ran, so
-// seed:admin's "already exists" check silently skipped creating a real admin.
-//
-// Run with: node seed/fixAdminRole.js
 require('dotenv').config();
-const connectDB = require('../config/db');
+
+const mongoose = require('mongoose');
 const User = require('../models/User');
 
-(async () => {
-  await connectDB();
+async function fixAdminRole() {
+  try {
+    if (!process.env.MONGO_URI) {
+      throw new Error(
+        'MONGO_URI is missing in backend/.env'
+      );
+    }
 
-  const email = (process.env.ADMIN_EMAIL || 'admin@storerating.com').toLowerCase();
-  const user = await User.findOne({ email });
+    await mongoose.connect(
+      process.env.MONGO_URI
+    );
 
-  if (!user) {
-    console.log('No user found with email:', email, '- run "npm run seed:admin" instead.');
+    console.log(
+      'MongoDB connected'
+    );
+
+    const email =
+      process.argv[2] ||
+      process.env.ADMIN_EMAIL;
+
+    if (!email) {
+      throw new Error(
+        'Provide admin email as argument or set ADMIN_EMAIL in .env'
+      );
+    }
+
+    const normalizedEmail =
+      email.trim().toLowerCase();
+
+    const user =
+      await User.findOne({
+        email: normalizedEmail,
+      });
+
+    if (!user) {
+      throw new Error(
+        `User not found: ${normalizedEmail}`
+      );
+    }
+
+    user.role = 'admin';
+
+    await user.save();
+
+    console.log(
+      `Admin role successfully assigned to ${user.email}`
+    );
+
     process.exit(0);
-  }
+  } catch (error) {
+    console.error(
+      'Failed to fix admin role:',
+      error.message
+    );
 
-  if (user.role === 'admin') {
-    console.log('User is already an admin:', email);
-    process.exit(0);
+    process.exit(1);
+  } finally {
+    if (
+      mongoose.connection.readyState !==
+      0
+    ) {
+      await mongoose.connection.close();
+    }
   }
+}
 
-  user.role = 'admin';
-  await user.save();
-  console.log(`Promoted "${user.name}" (${email}) from role to admin. Password unchanged - log in with whatever password you used when you signed up.`);
-  process.exit(0);
-})();
+fixAdminRole();

@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { Skeleton } from '../components/Skeleton';
+import { useToast } from '../context/ToastContext';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
-    api.get('/admin/dashboard').then((res) => setStats(res.data));
+    api
+      .get('/admin/dashboard')
+      .then((res) => setStats(res.data))
+      .catch((err) => toast.error(err.response?.data?.message || 'Could not load dashboard stats.'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
