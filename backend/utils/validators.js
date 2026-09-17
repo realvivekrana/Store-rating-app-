@@ -49,6 +49,13 @@ function validateRating(rating) {
   return null;
 }
 
+// Escapes regex special characters so user-supplied search text can be
+// safely used inside a MongoDB $regex filter (also prevents ReDoS-style
+// crafted input from being treated as regex syntax).
+function escapeRegex(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Runs the relevant validators and returns { valid, errors } where errors is a
 // field -> message map (only for fields that were passed in).
 function validateUserFields({ name, email, password, address }) {
@@ -79,4 +86,5 @@ module.exports = {
   validatePassword,
   validateRating,
   validateUserFields,
+  escapeRegex,
 };

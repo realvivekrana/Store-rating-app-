@@ -57,7 +57,7 @@ export default function AdminStores() {
     <div className="page">
       <div className="page-header">
         <h2>Stores</h2>
-        <Link className="btn" to="/admin/stores/new">+ Add Store</Link>
+        <Link className="btn" to="/admin/stores/add">+ Add Store</Link>
       </div>
 
       <div className="filters">
@@ -74,9 +74,9 @@ export default function AdminStores() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <SortableHeader label="Name" field="name" sortBy={sortBy} order={order} onSort={handleSort} />
-                  <SortableHeader label="Email" field="email" sortBy={sortBy} order={order} onSort={handleSort} />
-                  <SortableHeader label="Address" field="address" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <th><SortableHeader label="Name" field="name" sortBy={sortBy} order={order} onSort={handleSort} /></th>
+                  <th><SortableHeader label="Email" field="email" sortBy={sortBy} order={order} onSort={handleSort} /></th>
+                  <th><SortableHeader label="Address" field="address" sortBy={sortBy} order={order} onSort={handleSort} /></th>
                   <th>Rating</th>
                 </tr>
               </thead>
